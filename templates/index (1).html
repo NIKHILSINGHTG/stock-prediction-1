@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Price Prediction - ML Project</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        header h1 { font-size: 2.5em; margin-bottom: 10px; }
+        header p { font-size: 1.1em; opacity: 0.9; }
+        .content { padding: 40px; }
+        .upload-section {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border: 2px dashed #667eea;
+        }
+        .upload-section h2 { margin-bottom: 20px; color: #667eea; }
+        input[type="file"] { display: none; }
+        .file-label {
+            display: block;
+            padding: 20px;
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 600;
+            color: #667eea;
+            transition: all 0.3s;
+        }
+        .file-label:hover { background: #667eea; color: white; }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 15px;
+            font-weight: 600;
+            transition: transform 0.3s;
+        }
+        button:hover { transform: translateY(-2px); }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
+        .results-section { margin-top: 40px; }
+        .results-section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .stat-card h3 { font-size: 0.9em; opacity: 0.9; margin-bottom: 10px; }
+        .stat-card .value { font-size: 2em; font-weight: bold; }
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        .chart-container {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            height: 400px;
+        }
+        .chart-container h3 { margin-bottom: 15px; color: #333; }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .error { background: #fee; color: #c33; padding: 15px; border-radius: 8px; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        table thead { background: #667eea; color: white; }
+        table th, table td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        table tbody tr:hover { background: #f5f5f5; }
+        .download-buttons { display: flex; gap: 10px; margin-top: 20px; }
+        .download-btn { background: #28a745; }
+        .download-btn:hover { background: #218838; }
+        .hidden { display: none !important; }
+        .info-box { background: #e7f3ff; color: #004085; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            border-top: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📈 Stock Price Prediction</h1>
+            <p>Machine Learning Analysis Tool - Minor Project</p>
+        </header>
+
+        <div class="content">
+            <div class="info-box">
+                <strong>📌 Instructions:</strong> Upload a CSV file with stock data (Date, Open, High, Low, Close, Volume). The tool will automatically train ML models.
+            </div>
+
+            <div class="upload-section">
+                <h2>📂 Upload Stock Data (CSV)</h2>
+                <input type="file" id="fileInput" accept=".csv" />
+                <label for="fileInput" class="file-label">
+                    <span>📁 Click to upload CSV file</span>
+                    <div id="fileName"></div>
+                </label>
+                <button onclick="analyzeData()" id="analyzeBtn" disabled>🚀 Analyze & Train Models</button>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Processing data and training models...</p>
+            </div>
+
+            <div id="results" class="hidden">
+                <div class="results-section">
+                    <h2>📊 Model Performance</h2>
+                    <div class="stats-grid" id="statsGrid"></div>
+
+                    <h2 style="margin-top: 40px;">📈 Analysis Charts</h2>
+                    <div class="charts-grid">
+                        <div class="chart-container">
+                            <h3>Price Trend</h3>
+                            <canvas id="priceChart"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <h3>Predictions vs Actual</h3>
+                            <canvas id="predictionChart"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <h3>Model R² Comparison</h3>
+                            <canvas id="comparisonChart"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <h3>Error Distribution</h3>
+                            <canvas id="errorChart"></canvas>
+                        </div>
+                    </div>
+
+                    <h2 style="margin-top: 40px;">📋 Predictions</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Index</th>
+                                <th>Actual</th>
+                                <th>Linear Reg</th>
+                                <th>Random Forest</th>
+                                <th>Ensemble</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+
+                    <div class="download-buttons">
+                        <button class="download-btn" onclick="downloadCSV()">📥 Download CSV</button>
+                        <button class="download-btn" onclick="downloadReport()">📄 Download Report</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="errorDiv"></div>
+        </div>
+
+        <footer>
+            <p>🎓 Stock Price Prediction ML Project | Ready for Submission</p>
+        </footer>
+    </div>
+
+    <script>
+        let analysisResults = null;
+        let charts = {};
+
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            if (e.target.files[0]) {
+                document.getElementById('fileName').textContent = `✓ ${e.target.files[0].name}`;
+                document.getElementById('analyzeBtn').disabled = false;
+            }
+        });
+
+        function analyzeData() {
+            const file = document.getElementById('fileInput').files[0];
+            if (!file) return;
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').classList.add('hidden');
+            document.getElementById('errorDiv').innerHTML = '';
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            fetch('/api/analyze', { method: 'POST', body: formData })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById('errorDiv').innerHTML = `<div class="error">❌ ${data.error}</div>`;
+                    } else {
+                        analysisResults = data;
+                        displayResults();
+                        document.getElementById('results').classList.remove('hidden');
+                    }
+                    document.getElementById('loading').style.display = 'none';
+                })
+                .catch(error => {
+                    document.getElementById('errorDiv').innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+                    document.getElementById('loading').style.display = 'none';
+                });
+        }
+
+        function displayResults() {
+            const stats = analysisResults.statistics;
+            const models = analysisResults.models;
+            const actual = analysisResults.actual_prices;
+
+            const bestR2 = Math.max(models['Linear Regression'].r2, models['Random Forest'].r2, models['Ensemble'].r2);
+            const bestModel = bestR2 === models['Linear Regression'].r2 ? 'Linear Regression' : 
+                             bestR2 === models['Random Forest'].r2 ? 'Random Forest' : 'Ensemble';
+
+            document.getElementById('statsGrid').innerHTML = `
+                <div class="stat-card"><h3>Data Points</h3><div class="value">${stats.count}</div></div>
+                <div class="stat-card"><h3>Avg Price</h3><div class="value">$${stats.mean.toFixed(2)}</div></div>
+                <div class="stat-card"><h3>Range</h3><div class="value">$${stats.min.toFixed(0)}-${stats.max.toFixed(0)}</div></div>
+                <div class="stat-card"><h3>Best Model</h3><div class="value">${bestModel}</div></div>
+            `;
+
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = '';
+            actual.forEach((a, i) => {
+                tableBody.innerHTML += `<tr><td>${i+1}</td><td>$${a.toFixed(2)}</td><td>$${models['Linear Regression'].predictions[i].toFixed(2)}</td><td>$${models['Random Forest'].predictions[i].toFixed(2)}</td><td>$${models['Ensemble'].predictions[i].toFixed(2)}</td></tr>`;
+            });
+
+            createCharts();
+        }
+
+        function createCharts() {
+            const prices = analysisResults.all_prices;
+            const actual = analysisResults.actual_prices;
+            const models = analysisResults.models;
+
+            if (charts.price) charts.price.destroy();
+            charts.price = new Chart(document.getElementById('priceChart'), {
+                type: 'line',
+                data: {
+                    labels: prices.map((_, i) => i),
+                    datasets: [{
+                        label: 'Stock Price',
+                        data: prices,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.3,
+                        borderWidth: 2,
+                        fill: true
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            if (charts.pred) charts.pred.destroy();
+            charts.pred = new Chart(document.getElementById('predictionChart'), {
+                type: 'line',
+                data: {
+                    labels: actual.map((_, i) => i),
+                    datasets: [
+                        {
+                            label: 'Actual',
+                            data: actual,
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            tension: 0.3,
+                            borderWidth: 2
+                        },
+                        {
+                            label: 'Predicted',
+                            data: models['Linear Regression'].predictions,
+                            borderColor: '#764ba2',
+                            backgroundColor: 'transparent',
+                            tension: 0.3,
+                            borderWidth: 2,
+                            borderDash: [5, 5]
+                        }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            if (charts.comp) charts.comp.destroy();
+            charts.comp = new Chart(document.getElementById('comparisonChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['Linear Reg', 'Random Forest', 'Ensemble'],
+                    datasets: [{
+                        label: 'R² Score',
+                        data: [models['Linear Regression'].r2, models['Random Forest'].r2, models['Ensemble'].r2],
+                        backgroundColor: ['#667eea', '#764ba2', '#28a745']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { max: 1 } } }
+            });
+
+            if (charts.err) charts.err.destroy();
+            charts.err = new Chart(document.getElementById('errorChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['RMSE', 'MAE'],
+                    datasets: [
+                        { label: 'Linear', data: [models['Linear Regression'].rmse, models['Linear Regression'].mae], backgroundColor: '#667eea' },
+                        { label: 'Forest', data: [models['Random Forest'].rmse, models['Random Forest'].mae], backgroundColor: '#764ba2' },
+                        { label: 'Ensemble', data: [models['Ensemble'].rmse, models['Ensemble'].mae], backgroundColor: '#28a745' }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        function downloadCSV() {
+            const actual = analysisResults.actual_prices;
+            const models = analysisResults.models;
+            let csv = 'Index,Actual,LinearRegression,RandomForest,Ensemble\n';
+            actual.forEach((a, i) => {
+                csv += `${i+1},${a.toFixed(2)},${models['Linear Regression'].predictions[i].toFixed(2)},${models['Random Forest'].predictions[i].toFixed(2)},${models['Ensemble'].predictions[i].toFixed(2)}\n`;
+            });
+            downloadFile(csv, 'predictions.csv', 'text/csv');
+        }
+
+        function downloadReport() {
+            fetch('/api/download-report', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(analysisResults)
+            })
+            .then(response => response.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'report.txt';
+                a.click();
+            });
+        }
+
+        function downloadFile(content, filename, type) {
+            const blob = new Blob([content], { type });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+        }
+    </script>
+</body>
+</html>
